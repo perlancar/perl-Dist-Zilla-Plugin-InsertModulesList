@@ -27,7 +27,7 @@ sub munge_file {
     my ($self, $file) = @_;
     my $content = $file->content;
     if ($content =~ s{^#\s*INSERT_MODULES_LIST\s*$}{$self->_insert_modules_list($1, $2)."\n"}egm) {
-        $self->log(["inserting modules list into '%s'", $1, $2, $file->name]);
+        $self->log(["inserting modules list into '%s'", $file->name]);
         $file->content($content);
     }
 }
@@ -44,14 +44,14 @@ sub _insert_modules_list {
         next unless $name =~ s!^lib[/\\]!!;
         $name =~ s![/\\]!::!g;
         $name =~ s/\.(pm|pod)$//;
-        push @list,
+        push @list, $name;
     }
     @list = sort @list;
 
     join(
         "",
         "=over\n\n",
-        (map {"=item * L<>\n\n"} @list),
+        (map {"=item * L<$_>\n\n"} @list),
         "=back\n\n",
     );
 }
@@ -88,7 +88,15 @@ After build, lib/Foo.pm will contain:
 
  This distribution contains the following modules:
 
- #INSERT_MODULES_LIST
+ =over
+
+ =item * L<Foo>
+
+ =item * L<Foo::Bar>
+
+ =item * L<Foo::Baz>
+
+ =back
 
  ...
 
