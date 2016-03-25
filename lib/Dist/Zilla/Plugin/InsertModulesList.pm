@@ -26,27 +26,62 @@ sub munge_files {
 sub munge_file {
     my ($self, $file) = @_;
     my $content = $file->content;
-    if ($content =~ s{^#\s*INSERT_MODULES_LIST\s*$}{$self->_insert_modules_list($1, $2)."\n"}egm) {
+    if ($content =~ s{^#\s*INSERT_MODULES_LIST(?:\s+(\S.*?))?\s*$}{$self->_insert_modules_list($1)."\n"}egm) {
         $self->log(["inserting modules list into '%s'", $file->name]);
         $file->content($content);
     }
 }
 
 sub _insert_modules_list {
-    my($self, $file, $name) = @_;
+    my($self, $opts) = @_;
+
+    my $opts = [split /\s+/, $opts];
 
     # XXX use DZR:FileFinderUser's multiple finder feature instead of excluding
     # it manually again using regex
 
-    my @list;
+    my @list0;
     for my $file (@{ $self->found_files }) {
         my $name = $file->name;
         next unless $name =~ s!^lib[/\\]!!;
         $name =~ s![/\\]!::!g;
         $name =~ s/\.(pm|pod)$//;
-        push @list, $name;
+        push @list0, $name;
     }
-    @list = sort @list;
+
+    my $opts_has_includes = grep { !/^-/ } @$opts;
+
+    # filter with options
+    my @list;
+  MODULE:
+    for my $mod (sort @list0) {
+        my $found = 0;
+      OPT:
+        for my $opt (@$opts) {
+            if ($opt =~ m!^-/(.*)/$!) {
+                # exclude modules matching a regex
+                next MODULE if $mod =~ /$1/;
+            } elsif ($opt =~ /^-(.*)/) {
+                # exclude a module
+                next MODULE if $mod eq $1;
+            } elsif ($opt =~ m!^/(.*)/!) {
+                # only include modules matching a regex
+                if ($mod =~ /$1/) {
+                    $found++;
+                } else {
+                    next MODULE;
+                }
+            } else {
+                # only include this module
+                if ($mod eq $1) {
+                    $found++;
+                } else {
+                    next MODULE;
+                }
+            }
+        }
+        push @list, $mod if !$opts_has_includes || $found;
+    }
 
     join(
         "",
@@ -105,6 +140,22 @@ After build, lib/Foo.pm will contain:
 
 This plugin finds C<< # INSERT_MODULES_LIST >> directive in your POD/code and
 replace it with a POD containing list of modules in the distribution.
+
+To exclude a module from the generated list, use:
+
+ # INSERT_MODULES_LIST -Foo::Bar -Baz ...
+
+To exclude modules matching a regex, use:
+
+ # INSERT_MODULES_LIST -/^Foo::Bar::(Helper|Util)/
+
+To only include modules matching a regex, use:
+
+ Below are the included plugins in this distribution"
+
+ # INSERT_MODULES_LIST /^Foo::Plugin::/
+
+Excludes and includes can be combined.
 
 
 =head1 SEE ALSO
