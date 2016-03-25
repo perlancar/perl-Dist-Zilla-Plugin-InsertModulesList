@@ -151,7 +151,7 @@ To exclude modules matching a regex, use:
 
 To only include modules matching a regex, use:
 
- Below are the included plugins in this distribution"
+ Below are the included plugins in this distribution:
 
  # INSERT_MODULES_LIST /^Foo::Plugin::/
 
