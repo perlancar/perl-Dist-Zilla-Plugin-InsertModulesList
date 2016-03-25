@@ -35,7 +35,7 @@ sub munge_file {
 sub _insert_modules_list {
     my($self, $opts) = @_;
 
-    my $opts = [split /\s+/, $opts];
+    $opts = [split /\s+/, $opts];
 
     # XXX use DZR:FileFinderUser's multiple finder feature instead of excluding
     # it manually again using regex
