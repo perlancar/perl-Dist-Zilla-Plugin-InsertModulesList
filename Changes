@@ -1,5 +1,3 @@
-Revision history for Dist-Zilla-Plugin-InsertModulesList
-
 0.02    2016-03-25 (PERLANCAR)
 
 	- Allow excluding/including only certain modules (using -Mod Mod
