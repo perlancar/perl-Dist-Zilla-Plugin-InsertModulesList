@@ -11,7 +11,7 @@ use Moose;
 with (
     'Dist::Zilla::Role::FileMunger',
     'Dist::Zilla::Role::FileFinderUser' => {
-        default_finders => [':InstallModules', ':ExecFiles'],
+        default_finders => [':AllFiles'], # XXX dzil doesn't provide InstallPODs only InstallModules
     },
 );
 
@@ -20,7 +20,11 @@ use namespace::autoclean;
 sub munge_files {
     my $self = shift;
 
-    $self->munge_file($_) for @{ $self->found_files };
+    for my $file (@{ $self->found_files }) {
+        my $name = $file->name;
+        next unless $name =~ m!^(lib|script|bin)[/\\]!;
+        $self->munge_file($file);
+    }
 }
 
 sub munge_file {
@@ -36,9 +40,6 @@ sub _insert_modules_list {
     my($self, $opts) = @_;
 
     $opts = [split /\s+/, $opts];
-
-    # XXX use DZR:FileFinderUser's multiple finder feature instead of excluding
-    # it manually again using regex
 
     my @list0;
     for my $file (@{ $self->found_files }) {
