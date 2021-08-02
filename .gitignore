@@ -2,3 +2,4 @@ Dist-Zilla-Plugin-InsertModulesList-*
 .build
 *~
 nytprof*
+.DS_Store
