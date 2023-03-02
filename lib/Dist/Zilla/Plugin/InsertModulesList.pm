@@ -1,8 +1,5 @@
 package Dist::Zilla::Plugin::InsertModulesList;
 
-# DATE
-# VERSION
-
 use 5.010001;
 use strict;
 use warnings;
@@ -15,7 +12,14 @@ with (
     },
 );
 
+has ordered => (is => 'rw');
+
 use namespace::autoclean;
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
 
 sub munge_files {
     my $self = shift;
@@ -83,11 +87,14 @@ sub _insert_modules_list {
         }
         push @list, $mod if !$opts_has_includes || $found;
     }
+    @list = sort @list;
+
+    my $ordered = $self->ordered // (@list > 6);
 
     join(
         "",
         "=over\n\n",
-        (map {"=item * L<$_>\n\n"} @list),
+        (map {"=item ".($ordered ? ($_+1).".":"*")." L<$list[$_]>\n\n"} 0..$#list),
         "=back\n\n",
     );
 }
@@ -100,11 +107,11 @@ __PACKAGE__->meta->make_immutable;
 
 =head1 SYNOPSIS
 
-In dist.ini:
+In F<dist.ini>:
 
  [InsertModulesList]
 
-In lib/Foo.pm:
+In F<lib/Foo.pm>:
 
  ...
 
@@ -116,7 +123,7 @@ In lib/Foo.pm:
 
  ...
 
-After build, lib/Foo.pm will contain:
+After build, F<lib/Foo.pm> will contain:
 
  ...
 
@@ -126,11 +133,13 @@ After build, lib/Foo.pm will contain:
 
  =over
 
- =item * L<Foo>
+ =item 1. L<Foo>
 
- =item * L<Foo::Bar>
+ =item 2. L<Foo::Bar>
 
- =item * L<Foo::Baz>
+ =item 3. L<Foo::Baz>
+
+ ...
 
  =back
 
@@ -157,6 +166,15 @@ To only include modules matching a regex, use:
  # INSERT_MODULES_LIST /^Foo::Plugin::/
 
 Excludes and includes can be combined.
+
+
+=head1 CONFIGURATION
+
+=head2 ordered
+
+Bool. Can be set to true to always generate an ordered list, or false to always
+generate an unordered list. If unset, will use unordered list for 6 or less
+items and ordered list otherwise.
 
 
 =head1 SEE ALSO
